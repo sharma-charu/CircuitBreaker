@@ -1,17 +1,16 @@
 package com.axlero.inventory_service.controller;
 
-import org.springframework.web.bind.annotation.RestController;
-
-import com.axlero.inventory_service.service.InventoryService;
+import com.axlero.inventory_service.dto.InventoryRequest;
+import com.axlero.inventory_service.dto.StockAvailabilityResponse;
 import com.axlero.inventory_service.model.Inventory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
+import com.axlero.inventory_service.service.InventoryService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/inventory")
 public class InventoryController {
 
     private final InventoryService inventoryService;
@@ -20,29 +19,37 @@ public class InventoryController {
         this.inventoryService = inventoryService;
     }
 
-    @GetMapping("/inventory/{productId}")
-    public Inventory getInventory(@PathVariable Long productId) {
-        return inventoryService.getInventory(productId);
+    @GetMapping("/{productId}")
+    public ResponseEntity<Inventory> getInventory(@PathVariable Long productId) {
+        Inventory inventory = inventoryService.getInventory(productId);
+        return ResponseEntity.ok(inventory);
     }
 
-    @PostMapping("/inventory")
-    public Inventory createInventory(@RequestBody Inventory inventory) {
-        return inventoryService.createInventory(inventory);
+    @PostMapping
+    public ResponseEntity<Inventory> createInventory(@Valid @RequestBody InventoryRequest request) {
+        Inventory created = inventoryService.createInventory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PutMapping("/inventory/{productId}")
-    public Inventory updateInventory(@PathVariable Long productId, @RequestBody Inventory inventory) {
-        return inventoryService.updateInventory(productId, inventory);
+    @PutMapping("/{productId}")
+    public ResponseEntity<Inventory> updateInventory(
+            @PathVariable Long productId,
+            @Valid @RequestBody InventoryRequest request) {
+        Inventory updated = inventoryService.updateInventory(productId, request);
+        return ResponseEntity.ok(updated);
     }
 
-    @DeleteMapping("/inventory/{productId}")
-    public String deleteInventory(@PathVariable Long productId) {
-        boolean deleted = inventoryService.deleteInventory(productId);
-        if (deleted) {
-            return "Inventory deleted successfully";
-        } else {
-            return "Inventory not found";
-        }
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> deleteInventory(@PathVariable Long productId) {
+        inventoryService.deleteInventory(productId);
+        return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{productId}/in-stock")
+    public ResponseEntity<StockAvailabilityResponse> checkInStock(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "1") Integer quantity) {
+        StockAvailabilityResponse response = inventoryService.checkStockAvailability(productId, quantity);
+        return ResponseEntity.ok(response);
+    }
 }
