@@ -277,11 +277,14 @@ function getServiceExecConfig(svc) {
           cmd: 'java',
           args: [
             '-XX:+UseSerialGC',
-            '-Xms20m',
-            '-Xmx64m',
+            '-Xms16m',
+            '-Xmx48m',
             '-Xss256k',
             '-XX:TieredStopAtLevel=1',
+            '-XX:CICompilerCount=2',
             '-Dspring.jmx.enabled=false',
+            '-Dspring.main.lazy-initialization=true',
+            '-Djava.security.egd=file:/dev/./urandom',
             '-jar',
             jarPath
           ]
@@ -469,10 +472,12 @@ async function main() {
   console.log(`\n${C.magenta}${C.bright}[STAGE 2/3] Starting Eureka Service Discovery...${C.reset}`);
   await startService(eureka);
 
-  // Tier 3: Microservices & API Gateway in Parallel
+  // Tier 3: Microservices & API Gateway (Sequential startup to eliminate RAM spikes)
   const tier2Services = SERVICES.filter(s => s.tier === 2);
-  console.log(`\n${C.cyan}${C.bright}[STAGE 3/3] Starting API Gateway & Microservices Cluster...${C.reset}`);
-  await Promise.all(tier2Services.map(s => startService(s)));
+  console.log(`\n${C.cyan}${C.bright}[STAGE 3/3] Starting API Gateway & Microservices Cluster Sequentially...${C.reset}`);
+  for (const s of tier2Services) {
+    await startService(s);
+  }
 
   console.log(`\n${C.green}${C.bright}🎉 ALL MICROSERVICES ARE RUNNING & CONNECTED!${C.reset}`);
   printStatusMatrix();
