@@ -1,0 +1,8 @@
+.git
+.gitignore
+.vscode
+**/target/
+**/node_modules/
+**/dist/
+*.log
+.mvn/wrapper/maven-wrapper.jar

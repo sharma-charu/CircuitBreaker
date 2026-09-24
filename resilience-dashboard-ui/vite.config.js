@@ -1,0 +1,29 @@
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      '/actuator': 'http://127.0.0.1:8080',
+      '/products': 'http://127.0.0.1:8080',
+      '/inventory': 'http://127.0.0.1:8080',
+      '/api': 'http://127.0.0.1:8080',
+      '/fallback': 'http://127.0.0.1:8080'
+    }
+  },
+  preview: {
+    host: '0.0.0.0',
+    port: parseInt(process.env.PORT || '5173'),
+    allowedHosts: true,
+    proxy: {
+      '/actuator': 'http://127.0.0.1:8080',
+      '/products': 'http://127.0.0.1:8080',
+      '/inventory': 'http://127.0.0.1:8080',
+      '/api': 'http://127.0.0.1:8080',
+      '/fallback': 'http://127.0.0.1:8080'
+    }
+  }
+})

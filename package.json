@@ -1,0 +1,25 @@
+{
+  "name": "circuit-breaker-cluster",
+  "version": "1.0.0",
+  "description": "Centralized Orchestrator for Circuit Breaker Microservices & Resilience Dashboard",
+  "main": "service-orchestrator.js",
+  "scripts": {
+    "start": "node service-orchestrator.js",
+    "start:all": "node service-orchestrator.js",
+    "stop": "node service-orchestrator.js --stop",
+    "stop:all": "node service-orchestrator.js --stop",
+    "status": "node service-orchestrator.js --status",
+    "build:ui": "npm --prefix resilience-dashboard-ui run build",
+    "dev:ui": "npm --prefix resilience-dashboard-ui run dev"
+  },
+  "keywords": [
+    "microservices",
+    "eureka",
+    "spring-cloud-gateway",
+    "resilience4j",
+    "orchestrator",
+    "circuit-breaker"
+  ],
+  "author": "Axlero Team",
+  "license": "ISC"
+}
