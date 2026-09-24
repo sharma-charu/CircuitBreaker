@@ -275,7 +275,16 @@ function getServiceExecConfig(svc) {
         const jarPath = path.join(targetDir, jar);
         return {
           cmd: 'java',
-          args: ['-XX:+UseSerialGC', '-Xms64m', '-Xmx180m', '-jar', jarPath]
+          args: [
+            '-XX:+UseSerialGC',
+            '-Xms20m',
+            '-Xmx64m',
+            '-Xss256k',
+            '-XX:TieredStopAtLevel=1',
+            '-Dspring.jmx.enabled=false',
+            '-jar',
+            jarPath
+          ]
         };
       }
     } catch { }
@@ -450,27 +459,30 @@ async function main() {
 
   killAllClusterPorts();
 
-  // Tier 1: Eureka Discovery Server (Foundation)
+  // Tier 1: Resilience Dashboard UI & API Proxy (Starts immediately to satisfy cloud health check)
+  const dashboard = SERVICES.find(s => s.id === 'dashboard');
+  console.log(`\n${C.green}${C.bright}[STAGE 1/3] Starting Resilience Dashboard Frontend & Gateway Proxy...${C.reset}`);
+  await startService(dashboard);
+
+  // Tier 2: Eureka Discovery Server (Foundation)
   const eureka = SERVICES.find(s => s.id === 'eureka');
-  console.log(`\n${C.magenta}${C.bright}[STAGE 1/3] Starting Eureka Service Discovery...${C.reset}`);
+  console.log(`\n${C.magenta}${C.bright}[STAGE 2/3] Starting Eureka Service Discovery...${C.reset}`);
   await startService(eureka);
 
-  // Tier 2: Microservices & API Gateway in Parallel
+  // Tier 3: Microservices & API Gateway in Sequenced Stagger
   const tier2Services = SERVICES.filter(s => s.tier === 2);
-  console.log(`\n${C.cyan}${C.bright}[STAGE 2/3] Starting API Gateway & Microservices Cluster...${C.reset}`);
-  await Promise.all(tier2Services.map(s => startService(s)));
-
-  // Tier 3: Resilience Dashboard UI
-  const dashboard = SERVICES.find(s => s.id === 'dashboard');
-  console.log(`\n${C.green}${C.bright}[STAGE 3/3] Starting Resilience Dashboard Frontend...${C.reset}`);
-  await startService(dashboard);
+  console.log(`\n${C.cyan}${C.bright}[STAGE 3/3] Starting API Gateway & Microservices Cluster...${C.reset}`);
+  for (const s of tier2Services) {
+    startService(s);
+    await new Promise(r => setTimeout(r, 1500));
+  }
 
   console.log(`\n${C.green}${C.bright}🎉 ALL MICROSERVICES ARE RUNNING & CONNECTED!${C.reset}`);
   printStatusMatrix();
 
   // Auto-open Dashboard
   setTimeout(() => {
-    openBrowser('http://localhost:5173');
+    openBrowser(`http://localhost:${DASHBOARD_PUBLIC_PORT}`);
   }, 1000);
 
   setupKeyboardControls();
