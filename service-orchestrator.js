@@ -275,10 +275,13 @@ function getServiceExecConfig(svc) {
         const jarPath = path.join(targetDir, jar);
         const jvmArgs = [
           '-XX:+UseSerialGC',
-          '-Xms20m',
-          '-Xmx64m',
-          '-Xss512k',
+          '-Xms12m',
+          '-Xmx36m',
+          '-Xss256k',
+          '-XX:ReservedCodeCacheSize=16m',
+          '-XX:InitialCodeCacheSize=4m',
           '-XX:TieredStopAtLevel=1',
+          '-XX:CICompilerCount=2',
           '-jar',
           jarPath
         ];
