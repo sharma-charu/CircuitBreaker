@@ -4,14 +4,21 @@
  * with Resilience4j Actuator parsers and fallback data simulators.
  */
 
-const DEFAULT_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080';
-
 export const getGatewayUrl = () => {
-  return localStorage.getItem('resilience_gateway_url') || DEFAULT_GATEWAY_URL;
+  const saved = typeof window !== 'undefined' ? localStorage.getItem('resilience_gateway_url') : null;
+  if (saved && saved !== 'http://localhost:8080') return saved;
+  if (import.meta.env.VITE_API_GATEWAY_URL) return import.meta.env.VITE_API_GATEWAY_URL;
+  // If hosted on cloud (Railway/HTTPS), use relative origin so requests pass through the internal proxy
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return '';
+  }
+  return 'http://localhost:8080';
 };
 
 export const setGatewayUrl = (url) => {
-  localStorage.setItem('resilience_gateway_url', url.trim());
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('resilience_gateway_url', url.trim());
+  }
 };
 
 // Helper to time API calls with high accuracy
