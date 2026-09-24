@@ -469,13 +469,10 @@ async function main() {
   console.log(`\n${C.magenta}${C.bright}[STAGE 2/3] Starting Eureka Service Discovery...${C.reset}`);
   await startService(eureka);
 
-  // Tier 3: Microservices & API Gateway in Sequenced Stagger
+  // Tier 3: Microservices & API Gateway in Parallel
   const tier2Services = SERVICES.filter(s => s.tier === 2);
   console.log(`\n${C.cyan}${C.bright}[STAGE 3/3] Starting API Gateway & Microservices Cluster...${C.reset}`);
-  for (const s of tier2Services) {
-    startService(s);
-    await new Promise(r => setTimeout(r, 1500));
-  }
+  await Promise.all(tier2Services.map(s => startService(s)));
 
   console.log(`\n${C.green}${C.bright}🎉 ALL MICROSERVICES ARE RUNNING & CONNECTED!${C.reset}`);
   printStatusMatrix();
