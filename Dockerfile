@@ -58,8 +58,8 @@ COPY --from=backend-builder /workspace/api-Gateway/target /app/api-Gateway/targe
 COPY --from=backend-builder /workspace/product-service/target /app/product-service/target
 COPY --from=backend-builder /workspace/inventory-service/target /app/inventory-service/target
 
-# Copy built frontend UI
-COPY --from=frontend-builder /ui /app/resilience-dashboard-ui
+# Copy built frontend UI dist
+COPY --from=frontend-builder /ui/dist /app/resilience-dashboard-ui/dist
 
 # Railway environment default port
 ENV PORT=5173

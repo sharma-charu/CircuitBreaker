@@ -179,19 +179,89 @@ function killAllClusterPorts() {
   SERVICES.forEach(s => killPort(s.port));
 }
 
+// Built-in Static & API Gateway Reverse Proxy Server for Dashboard
+function startStaticDashboardServer(port = 5173, distDir) {
+  const mimeTypes = {
+    '.html': 'text/html',
+    '.js': 'application/javascript',
+    '.css': 'text/css',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.woff2': 'font/woff2'
+  };
+
+  const server = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    const pathname = (req.url || '/').split('?')[0];
+
+    // Reverse-proxy API & Actuator requests to API Gateway (Port 8080)
+    const isProxy = /^\/(actuator|products|inventory|api|fallback)/.test(pathname);
+    if (isProxy) {
+      const proxyReq = http.request({
+        hostname: '127.0.0.1',
+        port: 8080,
+        path: req.url,
+        method: req.method,
+        headers: {
+          ...req.headers,
+          host: '127.0.0.1:8080'
+        }
+      }, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+        proxyRes.pipe(res, { end: true });
+      });
+
+      proxyReq.on('error', () => {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'GATEWAY_STARTING', message: 'API Gateway is initializing...' }));
+      });
+
+      req.pipe(proxyReq, { end: true });
+      return;
+    }
+
+    // Static Asset Delivery with SPA fallback
+    let filePath = path.join(distDir, pathname === '/' ? 'index.html' : pathname);
+    if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+      filePath = path.join(distDir, 'index.html');
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+    fs.readFile(filePath, (err, content) => {
+      if (err) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('File Not Found');
+      } else {
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(content);
+      }
+    });
+  });
+
+  const listenPort = parseInt(process.env.PORT || port);
+  server.listen(listenPort, '0.0.0.0', () => {
+    console.log(`${C.green}${C.bright}✔ [READY] Dashboard UI Static & Proxy Server ONLINE on 0.0.0.0:${listenPort}${C.reset}`);
+  });
+
+  return server;
+}
+
 // Dynamic command resolver (Runs pre-built JARs with memory optimization if available, or dev mode)
 function getServiceExecConfig(svc) {
-  if (svc.id === 'dashboard') {
-    const distPath = path.join(svc.cwd, 'dist');
-    if (fs.existsSync(distPath)) {
-      return {
-        cmd: NPM_CMD,
-        args: ['run', 'preview', '--', '--host', '0.0.0.0']
-      };
-    }
-    return { cmd: svc.cmd, args: svc.args };
-  }
-
   // Check for pre-built JAR in target/
   const targetDir = path.join(svc.cwd, 'target');
   if (fs.existsSync(targetDir)) {
@@ -214,6 +284,19 @@ function getServiceExecConfig(svc) {
 // Spawn a microservice process
 function startService(svc) {
   return new Promise((resolve) => {
+    // If dashboard has a production dist folder, serve it with built-in HTTP server
+    if (svc.id === 'dashboard') {
+      const distPath = path.join(svc.cwd, 'dist');
+      if (fs.existsSync(distPath)) {
+        console.log(`${svc.color}${C.bright}▶ Launching ${svc.name} via Native Node Static/Proxy Server...${C.reset}`);
+        serviceStatuses.set(svc.id, 'ONLINE');
+        const srv = startStaticDashboardServer(svc.port, distPath);
+        processes.set(svc.id, { kill: () => srv.close() });
+        resolve(true);
+        return;
+      }
+    }
+
     const execConfig = getServiceExecConfig(svc);
     console.log(`${svc.color}${C.bright}▶ Launching ${svc.name} on Port ${svc.port} [${execConfig.cmd}]...${C.reset}`);
     serviceStatuses.set(svc.id, 'STARTING');
