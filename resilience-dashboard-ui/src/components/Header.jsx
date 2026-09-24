@@ -100,7 +100,7 @@ export default function Header({
             <div className={`gateway-status-pill ${isOnline ? 'online' : 'offline'}`}>
               <span className={`status-dot ${isOnline ? 'closed' : 'open'}`}></span>
               <span className="pill-text">
-                {isOnline ? 'Gateway :8080 Connected' : 'Gateway Offline (Demo Mode)'}
+                {isOnline ? 'Gateway Connected' : 'Gateway Offline (Demo Mode)'}
               </span>
             </div>
 

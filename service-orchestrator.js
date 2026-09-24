@@ -273,20 +273,17 @@ function getServiceExecConfig(svc) {
       const jar = files.find(f => f.endsWith('.jar') && !f.endsWith('.original') && !f.includes('javadoc') && !f.includes('sources'));
       if (jar) {
         const jarPath = path.join(targetDir, jar);
+        const jvmArgs = [
+          '-XX:+UseSerialGC',
+          '-Xms64m',
+          '-Xmx256m',
+          '-XX:TieredStopAtLevel=1',
+          '-jar',
+          jarPath
+        ];
         return {
           cmd: 'java',
-          args: [
-            '-XX:+UseSerialGC',
-            '-Xms24m',
-            '-Xmx64m',
-            '-Xss256k',
-            '-XX:TieredStopAtLevel=1',
-            '-XX:CICompilerCount=2',
-            '-Dspring.jmx.enabled=false',
-            '-Djava.security.egd=file:/dev/./urandom',
-            '-jar',
-            jarPath
-          ]
+          args: jvmArgs
         };
       }
     } catch { }
