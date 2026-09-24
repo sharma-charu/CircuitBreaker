@@ -119,7 +119,17 @@ export default function App() {
       if (online) {
         const prodRes = await fetchProducts();
         if (prodRes.ok && Array.isArray(prodRes.data) && prodRes.data.length > 0) {
-          setProducts(prodRes.data);
+          const mergedProducts = prodRes.data.map(liveProd => {
+            const mock = MOCK_PRODUCTS.find(m => m.id === liveProd.id || m.name.toLowerCase() === liveProd.name.toLowerCase()) || {};
+            return {
+              ...mock,
+              ...liveProd,
+              image: liveProd.image || mock.image,
+              category: liveProd.category || mock.category || 'Electronics',
+              sku: liveProd.sku || mock.sku || `SKU-${liveProd.id}`
+            };
+          });
+          setProducts(mergedProducts);
         }
       }
 

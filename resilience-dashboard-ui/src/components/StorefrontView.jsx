@@ -17,6 +17,7 @@ import {
   Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { MOCK_PRODUCTS } from '../api/client';
 
 export default function StorefrontView({
   products = [],
@@ -236,23 +237,29 @@ export default function StorefrontView({
 
         {/* Product Cards Grid */}
         <div className="products-grid">
-          {filteredProducts.map((prod) => (
-            <div key={prod.id} className="product-card glass-card">
-              <div className="product-image-container">
-                {prod.image ? (
-                  <img src={prod.image} alt={prod.name} className="product-image" />
-                ) : (
-                  <div className="product-placeholder">
-                    <Package size={40} className="text-slate-600" />
-                  </div>
-                )}
-                <span className="sku-badge">{prod.sku || `SKU-${prod.id}`}</span>
-              </div>
+          {filteredProducts.map((prod) => {
+            const fallbackItem = MOCK_PRODUCTS.find(m => m.id === prod.id || m.name?.toLowerCase() === prod.name?.toLowerCase()) || {};
+            const displayImage = prod.image || fallbackItem.image;
+            const displayCategory = prod.category && prod.category !== 'Store Item' ? prod.category : (fallbackItem.category || 'Electronics');
+            const displaySku = prod.sku || fallbackItem.sku || `SKU-${prod.id}`;
 
-              <div className="product-details">
-                <div className="product-category">{prod.category || 'Store Item'}</div>
-                <h3 className="product-name">{prod.name}</h3>
-                <p className="product-desc">{prod.description}</p>
+            return (
+              <div key={prod.id} className="product-card glass-card">
+                <div className="product-image-container">
+                  {displayImage ? (
+                    <img src={displayImage} alt={prod.name} className="product-image" />
+                  ) : (
+                    <div className="product-placeholder">
+                      <Package size={40} className="text-slate-600" />
+                    </div>
+                  )}
+                  <span className="sku-badge">{displaySku}</span>
+                </div>
+
+                <div className="product-details">
+                  <div className="product-category">{displayCategory}</div>
+                  <h3 className="product-name">{prod.name}</h3>
+                  <p className="product-desc">{prod.description}</p>
                 
                 <div className="product-footer">
                   <div className="price-tag">
@@ -273,7 +280,8 @@ export default function StorefrontView({
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
