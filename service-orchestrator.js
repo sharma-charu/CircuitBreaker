@@ -277,13 +277,12 @@ function getServiceExecConfig(svc) {
           cmd: 'java',
           args: [
             '-XX:+UseSerialGC',
-            '-Xms16m',
-            '-Xmx48m',
+            '-Xms24m',
+            '-Xmx64m',
             '-Xss256k',
             '-XX:TieredStopAtLevel=1',
             '-XX:CICompilerCount=2',
             '-Dspring.jmx.enabled=false',
-            '-Dspring.main.lazy-initialization=true',
             '-Djava.security.egd=file:/dev/./urandom',
             '-jar',
             jarPath
