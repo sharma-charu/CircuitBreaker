@@ -275,11 +275,17 @@ function getServiceExecConfig(svc) {
         const jarPath = path.join(targetDir, jar);
         const jvmArgs = [
           '-XX:+UseSerialGC',
-          '-Xms64m',
-          '-Xmx256m',
+          '-Xms16m',
+          '-Xmx48m',
+          '-Xss384k',
           '-XX:TieredStopAtLevel=1',
+          '-XX:CICompilerCount=2',
+          '-XX:MetaspaceSize=28m',
+          '-XX:MaxMetaspaceSize=56m',
           '-jar',
-          jarPath
+          jarPath,
+          '--spring.main.lazy-initialization=true',
+          '--spring.jmx.enabled=false'
         ];
         return {
           cmd: 'java',
