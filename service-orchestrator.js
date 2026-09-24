@@ -42,6 +42,9 @@ const IS_WIN = os.platform() === 'win32';
 const MVNW_CMD = IS_WIN ? '.\\mvnw.cmd' : './mvnw';
 const NPM_CMD = IS_WIN ? 'npm.cmd' : 'npm';
 
+const GATEWAY_INTERNAL_PORT = parseInt(process.env.GATEWAY_PORT || '8080');
+const DASHBOARD_PUBLIC_PORT = parseInt(process.env.PORT || '5173');
+
 // Microservices Configuration Registry
 const SERVICES = [
   {
@@ -64,8 +67,8 @@ const SERVICES = [
     tag: '[API-GATEWAY]  ',
     color: C.cyan,
     bgTag: C.bgCyan,
-    port: 8080,
-    healthEndpoint: 'http://localhost:8080/actuator/health',
+    port: GATEWAY_INTERNAL_PORT,
+    healthEndpoint: `http://localhost:${GATEWAY_INTERNAL_PORT}/actuator/health`,
     cwd: path.join(ROOT_DIR, 'api-Gateway'),
     cmd: MVNW_CMD,
     args: ['spring-boot:run'],
@@ -116,8 +119,8 @@ const SERVICES = [
     tag: '[DASHBOARD-UI] ',
     color: C.cyan,
     bgTag: C.bgCyan,
-    port: 5173,
-    healthEndpoint: 'http://localhost:5173',
+    port: DASHBOARD_PUBLIC_PORT,
+    healthEndpoint: `http://localhost:${DASHBOARD_PUBLIC_PORT}`,
     cwd: path.join(ROOT_DIR, 'resilience-dashboard-ui'),
     cmd: NPM_CMD,
     args: ['run', 'dev', '--', '--host'],
@@ -164,13 +167,13 @@ function killPort(port) {
         if (pid && /^\d+$/.test(pid) && pid !== '0') {
           try {
             execSync(`taskkill /F /PID ${pid} /T`, { stdio: 'ignore' });
-          } catch {}
+          } catch { }
         }
       }
     } else {
       execSync(`fuser -k -n tcp ${port} 2>/dev/null || true`, { stdio: 'ignore' });
     }
-  } catch {}
+  } catch { }
 }
 
 // Kill all cluster ports
@@ -206,17 +209,17 @@ function startStaticDashboardServer(port = 5173, distDir) {
 
     const pathname = (req.url || '/').split('?')[0];
 
-    // Reverse-proxy API & Actuator requests to API Gateway (Port 8080)
+    // Reverse-proxy API & Actuator requests to API Gateway
     const isProxy = /^\/(actuator|products|inventory|api|fallback)/.test(pathname);
     if (isProxy) {
       const proxyReq = http.request({
         hostname: '127.0.0.1',
-        port: 8080,
+        port: GATEWAY_INTERNAL_PORT,
         path: req.url,
         method: req.method,
         headers: {
           ...req.headers,
-          host: '127.0.0.1:8080'
+          host: `127.0.0.1:${GATEWAY_INTERNAL_PORT}`
         }
       }, (proxyRes) => {
         res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
@@ -275,7 +278,7 @@ function getServiceExecConfig(svc) {
           args: ['-XX:+UseSerialGC', '-Xms64m', '-Xmx180m', '-jar', jarPath]
         };
       }
-    } catch {}
+    } catch { }
   }
 
   return { cmd: svc.cmd, args: svc.args };
@@ -387,7 +390,7 @@ async function stopAll() {
       } else {
         proc.kill('SIGTERM');
       }
-    } catch {}
+    } catch { }
   });
 
   killAllClusterPorts();
@@ -401,7 +404,7 @@ function openBrowser(url) {
     return;
   }
   const startCmd = IS_WIN ? `start ${url}` : process.platform === 'darwin' ? `open ${url}` : `xdg-open ${url} 2>/dev/null || true`;
-  exec(startCmd, () => {});
+  exec(startCmd, () => { });
 }
 
 // Setup Interactive Terminal CLI Keybindings
@@ -423,7 +426,7 @@ function setupKeyboardControls() {
           try {
             if (IS_WIN && proc.pid) execSync(`taskkill /F /PID ${proc.pid} /T`, { stdio: 'ignore' });
             else proc.kill('SIGTERM');
-          } catch {}
+          } catch { }
         });
         killAllClusterPorts();
         main();

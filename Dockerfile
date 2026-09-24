@@ -61,13 +61,14 @@ COPY --from=backend-builder /workspace/inventory-service/target /app/inventory-s
 # Copy built frontend UI dist
 COPY --from=frontend-builder /ui/dist /app/resilience-dashboard-ui/dist
 
-# Railway environment default port
-ENV PORT=5173
+# Railway environment default port configuration
+ENV PORT=8080
+ENV GATEWAY_PORT=8090
 ENV DOCKER=true
 ENV SPRING_PROFILES_ACTIVE=prod
 
-# Expose UI and Gateway ports
-EXPOSE 5173 8080
+# Expose Railway default public entry port
+EXPOSE 8080
 
 # Start unified cluster orchestrator
 CMD ["node", "service-orchestrator.js"]
