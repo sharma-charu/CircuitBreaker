@@ -42,7 +42,7 @@ const IS_WIN = os.platform() === 'win32';
 const MVNW_CMD = IS_WIN ? '.\\mvnw.cmd' : './mvnw';
 const NPM_CMD = IS_WIN ? 'npm.cmd' : 'npm';
 
-const GATEWAY_INTERNAL_PORT = parseInt(process.env.GATEWAY_PORT || '8080');
+const GATEWAY_INTERNAL_PORT = parseInt(process.env.GATEWAY_PORT || '8090');
 const DASHBOARD_PUBLIC_PORT = parseInt(process.env.PORT || '5173');
 
 // Microservices Configuration Registry
